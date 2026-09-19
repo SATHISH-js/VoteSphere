@@ -27,8 +27,11 @@ backend/.env
 # Databases & Docker Mounts
 backend/redis-bin/
 redis_data/
+backend/data/
+data/
 *.rdb
 *.pdb
+*.tmp
 
 # Operating System & IDEs
 .DS_Store

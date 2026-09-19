@@ -35,10 +35,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    let errorMessage =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      error.message;
+    const backendMsg = error.response?.data?.message;
+    const backendErr = error.response?.data?.error;
+
+    // Prefer specific backend message first, then category error, then network/JS message
+    let errorMessage = backendMsg || backendErr || error.message;
+
+    // Provide friendly, crystal-clear message for 401 Unauthorized
+    if (error.response?.status === 401) {
+      if (backendMsg && backendMsg !== 'Authentication required or credentials invalid') {
+        errorMessage = backendMsg;
+      } else {
+        errorMessage = 'Invalid email or password. Please verify your credentials or register a new account.';
+      }
+    }
 
     // Friendly, actionable message if a 404 occurs on production
     if (error.response?.status === 404) {
@@ -58,6 +68,8 @@ api.interceptors.response.use(
 
     // If 401 Unauthorized, automatically clear token if expired
     if (error.response?.status === 401 && window.location.pathname.startsWith('/dashboard')) {
+      localStorage.removeItem('votesphere_jwt');
+      localStorage.removeItem('votesphere_user');
       localStorage.removeItem('pulsepoll_jwt');
       localStorage.removeItem('pulsepoll_user');
       window.location.href = '/login?expired=true';
