@@ -9,7 +9,11 @@ import (
 
 func CORSMiddleware(frontendURL string) gin.HandlerFunc {
 	config := cors.Config{
-		AllowOrigins:     []string{frontendURL, "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "*"},
+		AllowOriginFunc: func(origin string) bool {
+			// Allows any origin while reflecting the caller's specific origin
+			// This satisfies browser requirements when AllowCredentials is true
+			return true
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -17,6 +21,5 @@ func CORSMiddleware(frontendURL string) gin.HandlerFunc {
 		MaxAge:           12 * time.Hour,
 	}
 
-	// In production with specific origins, AllowAllOrigins should be false if credentials true
 	return cors.New(config)
 }

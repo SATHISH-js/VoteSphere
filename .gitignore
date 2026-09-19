@@ -25,9 +25,10 @@ frontend/.env
 backend/.env
 
 # Databases & Docker Mounts
-mongodb_data/
+backend/redis-bin/
 redis_data/
 *.rdb
+*.pdb
 
 # Operating System & IDEs
 .DS_Store
