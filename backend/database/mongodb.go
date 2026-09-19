@@ -26,10 +26,13 @@ func ConnectMongoDB(uri, dbName string) (*MongoDB, error) {
 		return nil, errors.New("MONGO_URI contains placeholder '<db_password>'. Please replace it with your actual Atlas password in .env")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI(uri)
+	clientOptions := options.Client().
+		ApplyURI(uri).
+		SetServerSelectionTimeout(3 * time.Second).
+		SetConnectTimeout(5 * time.Second)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, err
