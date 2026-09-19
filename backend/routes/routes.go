@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"strings"
 	"time"
 
 	"pulsepoll-backend/controllers"
@@ -28,6 +29,26 @@ func SetupRouter(deps *RouterDependencies) *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(middleware.ErrorHandlerMiddleware())
 	r.Use(middleware.CORSMiddleware(deps.FrontendURL))
+
+	// URL Path Normalizer Middleware
+	// Fixes double slashes '//', duplicate '/api/api', and routes called without '/api'
+	r.Use(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		for strings.Contains(p, "//") {
+			p = strings.ReplaceAll(p, "//", "/")
+		}
+		if strings.HasPrefix(p, "/api/api/") {
+			p = strings.TrimPrefix(p, "/api")
+		}
+		if strings.HasPrefix(p, "/auth/") || strings.HasPrefix(p, "/public/") || strings.HasPrefix(p, "/polls") {
+			p = "/api" + p
+		}
+		if p == "/health" {
+			p = "/api/health"
+		}
+		c.Request.URL.Path = p
+		c.Next()
+	})
 
 	// Rate limiters for auth and voting
 	authRateLimiter := middleware.NewIPRateLimiter(20, 1*time.Minute)

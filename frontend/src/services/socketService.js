@@ -16,15 +16,21 @@ export class PollSocket {
   }
 
   getWebSocketUrl() {
-    const envWsUrl = import.meta.env.VITE_WS_URL;
-    if (envWsUrl) {
-      return `${envWsUrl.replace(/\/$/, '')}/ws/polls/${this.pollId}`;
+    let wsUrl = (import.meta.env.VITE_WS_URL || '').trim().replace(/\/+$/, '');
+    if (wsUrl) {
+      return `${wsUrl}/ws/polls/${this.pollId}`;
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    let apiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+    if (apiUrl.endsWith('/api')) apiUrl = apiUrl.slice(0, -4);
+
+    if (apiUrl) {
+      const wsProtocol = apiUrl.startsWith('https:') ? 'wss:' : 'ws:';
+      const cleanHost = apiUrl.replace(/^https?:\/\//, '');
+      return `${wsProtocol}//${cleanHost}/ws/polls/${this.pollId}`;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    
-    // If running in development with separate ports (frontend 5173, backend 8080)
     let host = window.location.host;
     if (window.location.port === '5173') {
       host = `${window.location.hostname}:8080`;
