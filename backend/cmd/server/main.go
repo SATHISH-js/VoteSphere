@@ -16,6 +16,7 @@ import (
 	"pulsepoll-backend/repositories"
 	"pulsepoll-backend/routes"
 	"pulsepoll-backend/services"
+	"pulsepoll-backend/utils"
 	"pulsepoll-backend/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -105,6 +106,11 @@ func main() {
 			log.Fatalf("[FATAL] Server listen failed: %v", err)
 		}
 	}()
+
+	// 10. Start Keep-Alive Worker (Keeps Render free tier awake 24/7)
+	if cfg.KeepAliveURL != "" {
+		utils.StartKeepAliveWorker(cfg.KeepAliveURL, 13*time.Minute)
+	}
 
 	// Graceful shutdown on signal
 	quit := make(chan os.Signal, 1)

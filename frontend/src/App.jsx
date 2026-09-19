@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import api from './services/api';
 
 // Layouts
 import RootLayout from './layouts/RootLayout';
@@ -22,6 +23,11 @@ import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export function App() {
+  // Proactively warm up the backend on page load to eliminate cold-start delays
+  useEffect(() => {
+    api.get('/health').catch(() => {});
+  }, []);
+
   return (
     <AuthProvider>
       <ToastProvider>

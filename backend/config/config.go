@@ -15,6 +15,7 @@ type Config struct {
 	JWTSecret     string
 	FrontendURL   string
 	GinMode       string
+	KeepAliveURL  string
 }
 
 func LoadConfig() *Config {
@@ -37,6 +38,7 @@ func LoadConfig() *Config {
 		JWTSecret:     getEnv("JWT_SECRET", "pulsepoll-production-secret-key-change-in-prod-32bytes"),
 		FrontendURL:   getEnv("FRONTEND_URL", "http://localhost:5173"),
 		GinMode:       getEnv("GIN_MODE", "debug"),
+		KeepAliveURL:  getEnv("RENDER_EXTERNAL_URL", getEnv("KEEP_ALIVE_URL", getEnv("SELF_URL", ""))),
 	}
 
 	return cfg

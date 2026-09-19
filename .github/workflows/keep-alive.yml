@@ -1,0 +1,27 @@
+name: Keep Render Backend Active (24/7)
+
+on:
+  schedule:
+    # Run every 12 minutes (Render free tier sleeps after 15 minutes of inactivity)
+    - cron: '*/12 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  keep_alive:
+    name: Ping Backend Health Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Keep-Alive Ping
+        run: |
+          echo "Pinging VoteSphere backend to prevent inactivity spin-down..."
+          
+          # Target URL priority: GitHub Secret BACKEND_URL > Default Render backend URL
+          BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          if [ -z "$BACKEND_URL" ]; then
+            BACKEND_URL="https://votesphere-backend.onrender.com"
+          fi
+          
+          echo "Target: ${BACKEND_URL}/api/health"
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -m 30 "${BACKEND_URL}/api/health" || true)
+          echo "Response: $RESPONSE"
+          echo "Ping complete. Inactivity timer reset."
