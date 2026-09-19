@@ -60,6 +60,9 @@ func main() {
 		userRepo = repositories.NewUserRepository(mongoDB)
 		pollRepo = repositories.NewPollRepository(mongoDB)
 		voteRepo = repositories.NewVoteRepository(mongoDB)
+	} else {
+		log.Println("[INFO] Initializing In-Memory Fallback Repositories (Enables full registration, login, and polling while MongoDB Atlas IP whitelist is pending)...")
+		userRepo, pollRepo, voteRepo = repositories.NewInMemoryRepositories()
 	}
 
 	// 6. Initialize Services
