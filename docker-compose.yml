@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # 1. Frontend: React + Vite + NGINX SPA
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pulsepoll-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8080
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - pulsepoll-network
+
+  # 2. Backend: Go / Gin REST API & WebSocket Hub
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pulsepoll-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DATABASE=pulsepoll
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=pulsepoll-super-secure-production-jwt-secret-key-32chars
+      - FRONTEND_URL=http://localhost:3000
+      - GIN_MODE=release
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pulsepoll-network
+
+  # 3. Database: MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: pulsepoll-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pulsepoll-network
+
+  # 4. Real-Time Cache & Pub/Sub: Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: pulsepoll-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pulsepoll-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  pulsepoll-network:
+    driver: bridge

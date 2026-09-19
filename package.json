@@ -1,0 +1,13 @@
+{
+  "name": "votesphere",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VoteSphere - Real-Time Polling Platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "frontend": "npm --prefix frontend run dev",
+    "backend": "powershell -Command \"cd backend; .\\server.exe\""
+  }
+}
