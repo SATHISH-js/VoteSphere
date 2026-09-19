@@ -4,7 +4,7 @@ on:
   schedule:
     # Run every 12 minutes (Render free tier sleeps after 15 minutes of inactivity)
     - cron: '*/12 * * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch: # Allows manual 1-click trigger from GitHub Actions tab
 
 jobs:
   keep_alive:
@@ -13,7 +13,9 @@ jobs:
     steps:
       - name: Send Keep-Alive Ping
         run: |
-          echo "Pinging VoteSphere backend to prevent inactivity spin-down..."
+          echo "========================================================"
+          echo "Pinging VoteSphere Backend to prevent Render spin-down..."
+          echo "========================================================"
           
           # Target URL priority: GitHub Secret BACKEND_URL > Default Render backend URL
           BACKEND_URL="${{ secrets.BACKEND_URL }}"
@@ -21,7 +23,14 @@ jobs:
             BACKEND_URL="https://votesphere-backend.onrender.com"
           fi
           
-          echo "Target: ${BACKEND_URL}/api/health"
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -m 30 "${BACKEND_URL}/api/health" || true)
-          echo "Response: $RESPONSE"
-          echo "Ping complete. Inactivity timer reset."
+          TARGET="${BACKEND_URL%/}/api/health"
+          echo "Target URL: $TARGET"
+          
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 45 "$TARGET" || echo "FAILED")
+          echo "HTTP Response Status: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "503" ]; then
+            echo "SUCCESS: Render backend is awake and responding! Inactivity timer reset."
+          else
+            echo "Ping delivered (status: $HTTP_STATUS). Backend wakeup initiated."
+          fi
