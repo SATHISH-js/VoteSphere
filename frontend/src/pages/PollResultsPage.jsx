@@ -29,7 +29,7 @@ export function PollResultsPage() {
   const [showShareModal, setShowShareModal] = useState(false);
 
   // Hook up WebSocket real-time subscription
-  const { results, activeViewers, lastUpdated } = useWebSocket(
+  const { results, setResults, activeViewers, lastUpdated } = useWebSocket(
     poll?.id,
     poll?.results || null
   );
@@ -39,8 +39,14 @@ export function PollResultsPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await pollService.getPublicPoll(pollId);
-        setPoll(data);
+        const [pollData, resultsData] = await Promise.all([
+          pollService.getPublicPoll(pollId),
+          pollService.getResults(pollId).catch(() => null),
+        ]);
+        setPoll(pollData);
+        if (resultsData) {
+          setResults(resultsData);
+        }
       } catch (err) {
         setError(err.message || 'Poll not found');
       } finally {
@@ -81,7 +87,18 @@ export function PollResultsPage() {
 
   const isClosed = poll.status === 'closed';
   const totalVotes = results?.totalVotes ?? poll.totalVotes ?? 0;
-  const currentResults = results?.results || [];
+
+  // Always ensure options are visible, falling back to poll options if results are empty
+  const currentResults =
+    results?.results && results.results.length > 0
+      ? results.results
+      : (poll?.options || []).map((opt) => ({
+          optionId: opt.id,
+          optionText: opt.text,
+          votes: 0,
+          percentage: 0,
+        }));
+
   const maxVotes = Math.max(...currentResults.map((r) => r.votes || 0), 0);
 
   return (
@@ -135,8 +152,16 @@ export function PollResultsPage() {
               ))
             ) : (
               <p className="text-xs text-zinc-400 text-center py-6">
-                Waiting for audience responses...
+                No options available for this poll.
               </p>
+            )}
+
+            {/* Real-time waiting banner if no votes yet */}
+            {totalVotes === 0 && currentResults.length > 0 && (
+              <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-indigo-900 text-xs mt-3">
+                <Radio className="w-4 h-4 text-indigo-600 animate-pulse shrink-0" />
+                <span>Waiting for audience responses... Share the link below to collect votes in real time!</span>
+              </div>
             )}
           </div>
 
